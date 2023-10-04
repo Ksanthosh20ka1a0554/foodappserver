@@ -1,7 +1,6 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const serviceAccount = 'i-have-food-e4a0d-firebase-adminsdk-w1f1j-d737c84b53.json
-';
+const serviceAccount = 'i-have-food-e4a0d-firebase-adminsdk-w1f1j-d737c84b53.json';
 
 
 admin.initializeApp({
