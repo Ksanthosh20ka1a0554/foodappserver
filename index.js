@@ -24,14 +24,16 @@ app.post('/foodLocationChangeRequest', (req, res) => {
         .then(tokensSnapshot => {
             tokensSnapshot.forEach(tokenSnapshot => {
                 var deviceFcmToken = tokenSnapshot.val(); // Assuming each child node under FCMTokens is a token
-                sendFCMNotification(deviceFcmToken);
+                if(sendFCMNotification(deviceFcmToken)){
+                        res.status(200).send('Food location updated and notifications sent');
+                    }
                 // Skip sending notification to the current user
                 // if (tokenSnapshot.key !== currentUserId) {
                     
                 // }
             });
 
-            res.status(200).send('Food location updated and notifications sent');
+            // res.status(200).send('Food location updated and notifications sent');
         })
         .catch(error => {
             console.error('Error fetching FCM tokens:', error.message);
