@@ -7,41 +7,51 @@ admin.initializeApp({
     databaseURL: "https://i-have-food-e4a0d-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
-const db = admin.database();
 
+const db = admin.database();
 const app = express();
 const port = process.env.PORT || 7000;
 
 app.use(express.json());
 
+
+async function sendNotifications(currentUserId) {
+    try {
+        const fcmTokensRef = db.ref('FCMTokens');
+        const tokensSnapshot = await fcmTokensRef.once('value');
+        const tokens = tokensSnapshot.val();
+
+        if (!tokens) {
+            console.log('No FCM tokens found');
+            return;
+        }
+
+        const otherUserTokens = Object.entries(tokens)
+            .filter(([userId]) => userId !== currentUserId)
+            .map(([_, token]) => token);
+
+        if (otherUserTokens.length === 0) {
+            console.log('No other user tokens found');
+            return;
+        }
+
+        // Log each FCM token one by one
+        for (const token of otherUserTokens) {
+            await sendFCMNotification(token);
+        }
+
+        console.log('Notifications sent successfully');
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+
+
+
 app.post('/foodLocationChangeRequest', (req, res) => {
     const currentUserId = req.body.userId;
-
-    const fcmTokensRef = db.ref('FCMTokens');
-    fcmTokensRef.once('value')
-        .then(tokensSnapshot => {
-            const promises = [];
-
-            tokensSnapshot.forEach(tokenSnapshot => {
-                const deviceFcmToken = tokenSnapshot.val();
-                const promise = sendFCMNotification(deviceFcmToken);
-                promises.push(promise);
-            });
-
-            // Wait for all promises to resolve
-            Promise.all(promises)
-                .then(() => {
-                    res.status(200).send('Food location updated and notifications sent');
-                })
-                .catch(error => {
-                    console.error('Error sending FCM messages:', error.message);
-                    res.status(500).send('Internal Server Error');
-                });
-        })
-        .catch(error => {
-            console.error('Error fetching FCM tokens:', error.message);
-            res.status(500).send('Internal Server Error');
-        });
+    sendNotifications(currentUserId);
 });
 
 function sendFCMNotification(deviceFcmToken) {
@@ -53,8 +63,7 @@ function sendFCMNotification(deviceFcmToken) {
         token: deviceFcmToken
     };
 
-    // Return the promise
-    return admin.messaging().send(message)
+    admin.messaging().send(message)
         .then(response => {
             console.log('Successfully sent FCM message:', response);
         })
