@@ -37,7 +37,7 @@ async function sendNotifications(currentUserId) {
 
         // Log each FCM token one by one
         for (const token of otherUserTokens) {
-            await sendFCMNotification(token);
+            await sendFCMNotification(token,'New Food Donation','There is a new food donation available near you.');
         }
 
         console.log('Notifications sent successfully');
@@ -47,18 +47,49 @@ async function sendNotifications(currentUserId) {
 }
 
 
-
+app.post('/foodAccept', (req, res) => {
+    const acceptedUserId = req.body.userId;
+    sendAcceptanceNotification(acceptedUserId);
+    res.status(200).json({ message: 'Notification sent successfully.' });
+});
 
 app.post('/foodLocationChangeRequest', (req, res) => {
     const currentUserId = req.body.userId;
     sendNotifications(currentUserId);
 });
 
-function sendFCMNotification(deviceFcmToken) {
+async function sendAcceptanceNotification(acceptedUserId) {
+    try {
+        const fcmTokensRef = db.ref('FCMTokens');
+        const tokensSnapshot = await fcmTokensRef.once('value');
+        const tokens = tokensSnapshot.val();
+
+        if (!tokens) {
+            console.log('No FCM tokens found');
+            return;
+        }
+
+        const acceptedUserToken = tokens[acceptedUserId];
+
+        if (!acceptedUserToken) {
+            console.log('Token not found for the accepted user');
+            return;
+        }
+
+        // Send notification to the accepted user
+        await sendFCMNotification(acceptedUserToken, 'Food Acceptance Request', 'Your Food donation has been requested by someone.');
+
+        console.log('Acceptance notification sent successfully');
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+function sendFCMNotification(deviceFcmToken,title,body) {
     const message = {
         data: {
-            title: 'New Food Donation',
-            body: 'There is a new food donation available near you.'
+            title: title ,
+            body: body
         },
         token: deviceFcmToken
     };
