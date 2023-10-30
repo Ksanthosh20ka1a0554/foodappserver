@@ -50,7 +50,7 @@ async function sendNotifications(currentUserId) {
 app.post('/foodAccept', (req, res) => {
     const toUserId = req.body.toUserId;
     const currUserId = req.body.userId;
-    sendAcceptanceNotification(acceptedUserId,currUserId);
+    sendAcceptanceNotification(toUserId,currUserId);
     res.status(200).json({ message: 'Notification sent successfully.' });
 });
 
@@ -87,6 +87,7 @@ async function sendAcceptanceNotification(toUserId,currUserId) {
 }
 
 function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
+    let message;
     if(currUserId==''){
         const message = {
         data: {
@@ -101,7 +102,7 @@ function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
         data: {
             title: title ,
             body: body,
-            acceptedUserId: toUserId
+            acceptedUserId: currUserId
         },
         token: deviceFcmToken
     }; 
