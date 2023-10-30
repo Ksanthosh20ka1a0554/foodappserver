@@ -37,7 +37,7 @@ async function sendNotifications(currentUserId) {
 
         // Log each FCM token one by one
         for (const token of otherUserTokens) {
-            await sendFCMNotification(token,'New Food Donation','There is a new food donation available near you.');
+            await sendFCMNotification(token,'New Food Donation','There is a new food donation available near you.','');
         }
 
         console.log('Notifications sent successfully');
@@ -48,8 +48,9 @@ async function sendNotifications(currentUserId) {
 
 
 app.post('/foodAccept', (req, res) => {
-    const acceptedUserId = req.body.userId;
-    sendAcceptanceNotification(acceptedUserId);
+    const toUserId = req.body.toUserId;
+    const currUserId = req.body.userId;
+    sendAcceptanceNotification(acceptedUserId,currUserId);
     res.status(200).json({ message: 'Notification sent successfully.' });
 });
 
@@ -58,7 +59,7 @@ app.post('/foodLocationChangeRequest', (req, res) => {
     sendNotifications(currentUserId);
 });
 
-async function sendAcceptanceNotification(acceptedUserId) {
+async function sendAcceptanceNotification(toUserId,currUserId) {
     try {
         const fcmTokensRef = db.ref('FCMTokens');
         const tokensSnapshot = await fcmTokensRef.once('value');
@@ -69,15 +70,15 @@ async function sendAcceptanceNotification(acceptedUserId) {
             return;
         }
 
-        const acceptedUserToken = tokens[acceptedUserId];
+        const toUserToken = tokens[toUserId];
 
-        if (!acceptedUserToken) {
+        if (!toUserToken) {
             console.log('Token not found for the accepted user');
             return;
         }
 
         // Send notification to the accepted user
-        await sendFCMNotification(acceptedUserToken, 'Food Acceptance Request', 'Your Food donation has been requested by someone.');
+        await sendFCMNotification(toUserToken, 'Food Acceptance Request', 'Your Food donation has been requested by someone.',currUserId);
 
         console.log('Acceptance notification sent successfully');
     } catch (error) {
@@ -85,14 +86,27 @@ async function sendAcceptanceNotification(acceptedUserId) {
     }
 }
 
-function sendFCMNotification(deviceFcmToken,title,body) {
-    const message = {
+function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
+    if(currUserId==''){
+        const message = {
         data: {
             title: title ,
             body: body
         },
         token: deviceFcmToken
     };
+    }
+    else{
+       const message = {
+        data: {
+            title: title ,
+            body: body,
+            acceptedUserId: toUserId
+        },
+        token: deviceFcmToken
+    }; 
+    }
+    
 
     admin.messaging().send(message)
         .then(response => {
