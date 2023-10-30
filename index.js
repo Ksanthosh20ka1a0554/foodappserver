@@ -89,7 +89,7 @@ async function sendAcceptanceNotification(toUserId,currUserId) {
 function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
     let message;
     if(currUserId==''){
-        const message = {
+        message = {
         data: {
             title: title ,
             body: body
@@ -98,7 +98,7 @@ function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
     };
     }
     else{
-       const message = {
+       message = {
         data: {
             title: title ,
             body: body,
