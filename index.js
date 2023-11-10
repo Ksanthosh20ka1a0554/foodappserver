@@ -63,7 +63,7 @@ app.post('/messageNotification', (req, res) => {
     const currentUserId = req.body.userId;
     const toUserId = req.body.toUserId;
     const message = req.body.message;
-    sendMessageNotifications(currentUserId,toUserId,message);
+    sendMessageNotification(currentUserId,toUserId,message);
 });
 
 async function sendMessageNotification(currUserId,toUserId,message) {
