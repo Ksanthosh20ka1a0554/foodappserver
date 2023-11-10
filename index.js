@@ -87,7 +87,7 @@ async function sendMessageNotification(currUserId,toUserId,message) {
         // Send notification to the accepted user
                 await sendFCMNotification(toUserToken, 'New Message', "From ${currUserId} :${message}", currUserId);
 
-        console.log('Acceptance notification sent successfully');
+        console.log('Message notification sent successfully');
     } catch (error) {
         console.error('Error:', error.message);
     }
