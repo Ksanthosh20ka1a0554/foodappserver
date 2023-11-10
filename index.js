@@ -59,6 +59,41 @@ app.post('/foodLocationChangeRequest', (req, res) => {
     sendNotifications(currentUserId);
 });
 
+app.post('/messageNotification', (req, res) => {
+    const currentUserId = req.body.userId;
+    const toUserId = req.body.toUserId;
+    const message = req.body.message;
+    sendMessageNotifications(currentUserId,toUserId,message);
+});
+
+async function sendMessageNotification(currUserId,toUserId,message) {
+    try {
+        const fcmTokensRef = db.ref('FCMTokens');
+        const tokensSnapshot = await fcmTokensRef.once('value');
+        const tokens = tokensSnapshot.val();
+
+        if (!tokens) {
+            console.log('No FCM tokens found');
+            return;
+        }
+
+        const toUserToken = tokens[toUserId];
+
+        if (!toUserToken) {
+            console.log('Token not found for the accepted user');
+            return;
+        }
+
+        // Send notification to the accepted user
+                await sendFCMNotification(toUserToken, 'New Message', "From ${currUserId} :${message}", currUserId);
+
+        console.log('Acceptance notification sent successfully');
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+
 async function sendAcceptanceNotification(toUserId,currUserId) {
     try {
         const fcmTokensRef = db.ref('FCMTokens');
@@ -96,6 +131,16 @@ function sendFCMNotification(deviceFcmToken,title,body,currUserId) {
         },
         token: deviceFcmToken
     };
+    }
+    else if(title=="New Message"){
+       message = {
+        data: {
+            title: title ,
+            body: body,
+            messagedUserId: currUserId
+        },
+        token: deviceFcmToken
+    }; 
     }
     else{
        message = {
